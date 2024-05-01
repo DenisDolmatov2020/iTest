@@ -1,0 +1,41 @@
+template: |-
+  <div class="box">
+  <div>
+     <img 
+       :src="imageUrl" 
+       :alt="title"
+       width="200"
+     >
+  </div>
+     
+     <h2 class="box-title">
+       {{ title }}
+     </h2>
+
+     <div class="box-text">
+       {{ text }} 
+      </div>
+
+     <button @click="handleClick">
+       Buttons 
+     </ button>
+  </div>
+styles: |-
+  .box {
+      margin: 0 auto;
+      width: 200px;
+      height: 380px;
+      border: 2px solid #000;
+      border-radius: 8px;
+  }
+
+
+  .box-title {
+     height: 60px;
+     margin-left: 5px;
+  }
+
+  .box-text {
+      height: 60px;
+      margin-left: 15px;
+  }
