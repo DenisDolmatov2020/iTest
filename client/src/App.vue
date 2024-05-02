@@ -1,10 +1,9 @@
 <template>
   <div>
     <!-- Динамический компонент монтируется здесь -->
-
     <component
-        :is="dynamicComponent"
-        v-bind="data"
+      :is="dynamicComponent"
+      v-bind="data"
     />
     <button @click="updateTitle">
       Click to Update Title
@@ -14,8 +13,10 @@
 
 <script setup>
 import { ref, onMounted, defineAsyncComponent, shallowRef } from 'vue';
+import DefaultComponent from './DefaultComponent.vue';
 
-const loading = ref(false);
+
+const apiUrl = 'http://localhost:3000/api'
 // Реактивные данные для компонента
 const data = ref({
   title: 'Initial Title',
@@ -23,11 +24,15 @@ const data = ref({
   text: 'Initial text description'
 });
 
-// Функция для добавления стилей в <head>
-const addStyles = (styles) => {
-  const style = document.createElement('style');
-  style.textContent = styles;
-  document.head.appendChild(style);
+// Функция для добавления или обновления стилей в <head>
+const addStyles = (style) => {
+  let styleElement = document.getElementById('dynamic-styles');
+  if (!styleElement) {
+    styleElement = document.createElement('style');
+    styleElement.id = 'dynamic-styles';  // Установка ID для элемента style
+    document.head.appendChild(styleElement);
+  }
+  styleElement.textContent = style;  // Обновляем или устанавливаем содержимое
 };
 
 // Асинхронный компонент загруженный с сервера
@@ -37,21 +42,21 @@ const dynamicComponent = shallowRef(null);
 onMounted(async () => {
   try {
     const [dataResponse, templateResponse] = await Promise.all([
-      fetch('http://localhost:3000/api/component-data'),
-      fetch('http://localhost:3000/api/component-settings')
+      fetch(`${apiUrl}/component-data`),
+      fetch(`${apiUrl}/component-settings`)
     ]);
 
-    if (!dataResponse.ok || !templateResponse.ok) throw new Error("Failed to fetch data");
+    if (dataResponse.ok) {
+      const dynamicData = await dataResponse.json();
+      Object.assign(data.value, dynamicData);
+    }
 
-    const dynamicData = await dataResponse.json();
-    Object.assign(data.value, dynamicData);
+    if (templateResponse.ok) {
+      const templateData = await templateResponse.json();
+      // Добавляем стили перед созданием компонента
+      addStyles(templateData.styles);
 
-    const templateData = await templateResponse.json();
-
-    // Добавляем стили перед созданием компонента
-    addStyles(templateData.styles);
-
-    dynamicComponent.value = await defineAsyncComponent(() =>
+      dynamicComponent.value = await defineAsyncComponent(() =>
         Promise.resolve({
           template: templateData.template,
           methods: {
@@ -61,10 +66,10 @@ onMounted(async () => {
           },
           props: ['title', 'imageUrl', 'text']
         })
-    );
-
-    // loading.value = true
+      );
+    }
   } catch (error) {
+    dynamicComponent.value = DefaultComponent
     console.error("Failed to load component data or settings", error);
   }
 });

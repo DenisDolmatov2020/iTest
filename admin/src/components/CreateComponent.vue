@@ -1,11 +1,10 @@
 <template>
   <h1>Админский интерфейс</h1>
   <div class="admin-interface">
-
     <div>
       <div class="editor">
         <div>
-          <h3>Vue code</h3>
+          <h2>Vue code</h2>
 
           <VAceEditor
               v-model:value="vueCode"
@@ -13,16 +12,17 @@
               placeholder="Введите Vue.js код..."
               :options="{
                 fontSize: 14,
-                tabSize: 4,
-                showPrintMargin: false,
+                tabSize: 2,
+                showPrintMargin: true,
                 highlightActiveLine: true,
               }"
-              style="height: 200px; width: 400px"
+              theme="monokai"
+              class="editor-box"
               @init="editorInit"
           />
         </div>
-        <div>
-          <h3>CSS code</h3>
+        <div class="my-28">
+          <h2>CSS code</h2>
 
           <VAceEditor
               v-model:value="cssCode"
@@ -30,11 +30,12 @@
               placeholder="Введите CSS код..."
               :options="{
                 fontSize: 14,
-                tabSize: 4,
-                showPrintMargin: false,
+                tabSize: 2,
+                showPrintMargin: true,
                 highlightActiveLine: true,
               }"
-              style="height: 200px; width: 400px"
+              theme="monokai"
+              class="editor-box"
               @init="editorInit"
           />
         </div>
@@ -43,8 +44,8 @@
       <!-- Предпросмотр компонента будет здесь -->
     </div>
 
-    <div class="sample">
-      <h3>Sample</h3>
+    <div>
+      <h2>Preview</h2>
       <component
           :is="dynamicComponent"
           v-bind="data"
@@ -165,14 +166,12 @@ function updateTitle() {
   display: flex;
   justify-content: space-around;
 }
-.editor textarea {
-  /* Стили для текстовых полей редактора */
-  width: 100%;
-  min-width: 200px;
-  min-height: 150px;
-  margin-bottom: 10px;
+.editor .editor-box {
+  height: 200px;
+  width: 400px
 }
 
-.sample {
+.my-28 {
+  margin: 28px 0
 }
 </style>
