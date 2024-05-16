@@ -18,6 +18,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:80"
+    command: sh -c "echo 'Admin running at http://localhost:8080' && nginx -g 'daemon off;'"
 
   client:
     build:
@@ -25,3 +26,4 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8081:80"
+    command: sh -c "echo 'Client running at http://localhost:8081' && nginx -g 'daemon off;'"

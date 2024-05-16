@@ -1,85 +1,93 @@
+<template>
+  <Suspense>
+    <component :is="AsyncModal" />
+
+    <template #fallback>
+      <Loading />
+    </template>
+  </Suspense>
+</template>
+
 <script setup>
-import {defineAsyncComponent, reactive, onMounted, toRefs, shallowRef} from 'vue';
+import { defineComponent, h, defineAsyncComponent, reactive, toRefs } from 'vue';
+import Loading from '@/Loading.vue';
 import DefaultComponent from '@/DefaultComponent.vue';
+import loadData from '@/useDataLoader.js';
 
-const apiUrl = 'http://localhost:3000/api';
-const dynamicComponent = shallowRef(null);
+const AsyncModal = defineAsyncComponent({
+  loader: () =>
+      new Promise(async (resolve, reject) => {
+        try {
+          await new Promise(r => setTimeout(r, 2000));
+          const templateResponse = await fetch(`/api/component-settings`);
+          if (!templateResponse.ok) throw new Error('Failed to fetch settings');
+          const { template, styles } = await templateResponse.json();
 
-const initComponent = async () => {
-  try {
-    const templateResponse = await fetch(`${apiUrl}/component-settings`);
+          const state = reactive({
+            title: '',
+            imageUrl: '',
+            text: ''
+          });
 
-    if (templateResponse.ok) {
-      const { template, styles } = await templateResponse.json();
+          const updateReactiveState = (state) => (key, value) => {
+            state[key] = value;
+          };
+          await loadData(updateReactiveState(state));
 
-      dynamicComponent.value = defineAsyncComponent(() => {
-        return Promise.resolve({
-          template: `<div>${template}</div>`, // Вставьте template как HTML
-          setup() {
-            const state = reactive({
-              title: 'Initial Title',
-              imageUrl: 'https://example.com/initial-image.jpg',
-              text: 'Initial text description'
-            });
-
-            const fetchData = async () => {
-              try {
-                const dataResponse = await fetch(`${apiUrl}/component-data`);
-                if (dataResponse.ok) {
-                  const newData = await dataResponse.json();
-                  // Обновляем состояние
-                  state.title = newData.title;
-                  state.imageUrl = newData.imageUrl;
-                  state.text = newData.text;
-                }
-              } catch (error) {
-                console.error("Failed to fetch component data", error);
-              }
-            };
-
-            const addStyles = (style) => {
-              let styleElement = document.getElementById('dynamic-styles');
-              if (!styleElement) {
-                styleElement = document.createElement('style');
-                styleElement.id = 'dynamic-styles';
-                document.head.appendChild(styleElement);
-              }
-              styleElement.textContent = style;
-            };
-
-            const handleClick = () => {
-              state.title += '+';
-            }
-
-            onMounted(() => {
-              addStyles(styles);
-              fetchData();
-            });
-
-            return { ...toRefs(state), handleClick };
+          let styleElement = document.getElementById('dynamic-styles');
+          if (!styleElement) {
+            styleElement = document.createElement('style');
+            styleElement.id = 'dynamic-styles';
+            document.head.appendChild(styleElement);
           }
-        });
+          styleElement.textContent = styles;
+
+          resolve({
+            template: `<div>${template}</div>`,
+            setup() {
+              const handleClick = () => {
+                state.title += '+';
+              };
+
+              return { ...toRefs(state), handleClick };
+            }
+          });
+        } catch (error) {
+          console.error('Failed to load component:', error);
+          reject(error);
+        }
+      }),
+  errorComponent: defineComponent({
+    data() {
+      return {
+        title: '',
+        text: '',
+        imageUrl: '',
+      };
+    },
+    methods: {
+      updateData(key, value) {
+        this[key] = value;
+      }
+    },
+    mounted() {
+      loadData(this.updateData.bind(this)).catch(error => {
+        console.error('Error loading data in error component:', error);
+      });
+    },
+    render() {
+      return h(DefaultComponent, {
+        title: this.title,
+        imageUrl: this.imageUrl,
+        text: this.text
       });
     }
-  } catch (error) {
-    dynamicComponent.value = DefaultComponent;
-    console.error("Failed to load component settings", error);
-  }
-};
-
-initComponent()
+  })
+});
 </script>
-
-<template>
-  <component :is="dynamicComponent" />
-</template>
 
 <style scoped>
 main {
   display: flex;
 }
 </style>
-
-
-
-
